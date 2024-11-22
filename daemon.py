@@ -87,10 +87,10 @@ async def run(loop):
     await server.start()
     logger.debug("GATT Server started ..")
     #logger.info(f"Write '0xF' to the advertised characteristic: {my_char_uuid}")
-    if trigger.__module__ == "threading":
-        trigger.wait()
-    else:
-        await trigger.wait()
+    # if trigger.__module__ == "threading":
+    #     trigger.wait()
+    # else:
+    #     await trigger.wait()
 
     await asyncio.sleep(0.2)
     logger.debug("Updating")
