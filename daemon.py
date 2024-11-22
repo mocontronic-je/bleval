@@ -37,15 +37,19 @@ def read_request(characteristic: BlessGATTCharacteristic, **kwargs) -> bytearray
 def write_request(characteristic: BlessGATTCharacteristic, value: Any, **kwargs):
     characteristic.value = value
     logger.debug(f"Char value set to {characteristic.value}")
-    if characteristic.value == b"\x0f":
-        logger.debug("NICE")
-        trigger.set()
+    # if characteristic.value == b"\x0f":
+    logger.debug("NICE")
+    trigger.set()
+
+def notify(server, service_uuid, char_uuid, value):
+    server.get_characteristic(char_uuid).value = value
+    server.update_value(service_uuid, char_uuid)
 
 
 async def run(loop):
     trigger.clear()
     # Instantiate the server
-    my_service_name = "Test Service"
+    my_service_name = "UART Test Service"
     server = BlessServer(name=my_service_name, loop=loop)
     server.read_request_func = read_request
     server.write_request_func = write_request
@@ -78,8 +82,9 @@ async def run(loop):
 
     logger.debug(server.get_characteristic(rx_char_uuid))
     logger.debug(server.get_characteristic(tx_char_uuid))
+    
     await server.start()
-    #logger.debug("Advertising")
+    logger.debug("GATT Server started ..")
     #logger.info(f"Write '0xF' to the advertised characteristic: {my_char_uuid}")
     if trigger.__module__ == "threading":
         trigger.wait()
