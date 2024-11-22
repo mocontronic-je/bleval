@@ -1,4 +1,4 @@
-#!/home/pi/bleval/.venv/bin/python -u
+#!/home/pi/bleval/.venv-rpi/bin/python -u
 # coding: utf-8
 
 """
@@ -51,25 +51,36 @@ async def run(loop):
     server.write_request_func = write_request
 
     # Add Service
-    my_service_uuid = "A07498CA-AD5B-474E-940D-16F1FBE7E8CD"
-    await server.add_new_service(my_service_uuid)
+    nus_service_uuid = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"
+    await server.add_new_service(nus_service_uuid)
 
-    # Add a Characteristic to the service
-    my_char_uuid = "51FF12BB-3ED8-46E5-B4F9-D64E2FEC021B"
-    char_flags = (
-        GATTCharacteristicProperties.read
-        | GATTCharacteristicProperties.write
-        | GATTCharacteristicProperties.indicate
+    # Add RX Characteristic to the service
+    rx_char_uuid = "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"
+    rx_char_flags = (
+        GATTCharacteristicProperties.write
+        | GATTCharacteristicProperties.write_without_response
     )
-    permissions = GATTAttributePermissions.readable | GATTAttributePermissions.writeable
+    rx_char_permissions = GATTAttributePermissions.writeable
     await server.add_new_characteristic(
-        my_service_uuid, my_char_uuid, char_flags, None, permissions
+        nus_service_uuid, rx_char_uuid, rx_char_flags, None, rx_char_permissions
     )
 
-    logger.debug(server.get_characteristic(my_char_uuid))
+    # Add TX Characteristic to the service
+    tx_char_uuid = "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"
+    tx_char_flags = (
+        GATTCharacteristicProperties.notify
+    )
+    tx_char_permissions = GATTAttributePermissions.readable
+    tx_buffer = bytearray(b'oKaY')
+    await server.add_new_characteristic(
+        nus_service_uuid, tx_char_uuid, tx_char_flags, tx_buffer, tx_char_permissions
+    )
+
+    logger.debug(server.get_characteristic(rx_char_uuid))
+    logger.debug(server.get_characteristic(tx_char_uuid))
     await server.start()
-    logger.debug("Advertising")
-    logger.info(f"Write '0xF' to the advertised characteristic: {my_char_uuid}")
+    #logger.debug("Advertising")
+    #logger.info(f"Write '0xF' to the advertised characteristic: {my_char_uuid}")
     if trigger.__module__ == "threading":
         trigger.wait()
     else:
@@ -77,8 +88,9 @@ async def run(loop):
 
     await asyncio.sleep(2)
     logger.debug("Updating")
-    server.get_characteristic(my_char_uuid)
-    server.update_value(my_service_uuid, "51FF12BB-3ED8-46E5-B4F9-D64E2FEC021B")
+    server.get_characteristic(rx_char_uuid)
+    server.get_characteristic(tx_char_uuid)
+    server.update_value(nus_service_uuid, tx_char_uuid)
     await asyncio.sleep(5)
     await server.stop()
 
