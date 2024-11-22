@@ -39,10 +39,10 @@ def read_request(characteristic: BlessGATTCharacteristic, **kwargs) -> bytearray
 
 def write_request(characteristic: BlessGATTCharacteristic, value: Any, **kwargs):
     characteristic.value = value
-    logger.debug(f"Char value set to {characteristic.value}")
+    logger.debug(f"Serial input over BLE:{characteristic.value}")
     # if characteristic.value == b"\x0f":
-    logger.debug("NICE")
-    trigger.set()
+    # logger.debug("NICE")
+    # trigger.set()
 
 def notify(server, service_uuid, char_uuid, value):
     server.get_characteristic(char_uuid).value = value
@@ -97,8 +97,9 @@ async def run(loop):
     # await asyncio.sleep(0.2)
     logger.debug("Starting loop forever")
     while True:
-        if server.get_characteristic(rx_char_uuid).value != bytearray(b''):
-            server.get_characteristic(tx_char_uuid)
+        rx_input = server.get_characteristic(rx_char_uuid).value
+        if rx_input != bytearray(b''):
+            tx_buffer = bytearray(b'okay: ' + rx_input)
             server.update_value(nus_service_uuid, tx_char_uuid)
         await asyncio.sleep(0.5)
     await server.stop()
