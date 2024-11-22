@@ -97,9 +97,9 @@ async def run(loop):
     # await asyncio.sleep(0.2)
     logger.debug("Starting loop forever")
     while True:
-        logger.debug(server.get_characteristic(rx_char_uuid).value)
-        server.get_characteristic(tx_char_uuid)
-        server.update_value(nus_service_uuid, tx_char_uuid)
+        if server.get_characteristic(rx_char_uuid).value != bytearray(b''):
+            server.get_characteristic(tx_char_uuid)
+            server.update_value(nus_service_uuid, tx_char_uuid)
         await asyncio.sleep(0.5)
     await server.stop()
 
