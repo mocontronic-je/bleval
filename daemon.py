@@ -92,12 +92,13 @@ async def run(loop):
     # else:
     #     await trigger.wait()
 
-    await asyncio.sleep(0.2)
-    logger.debug("Updating")
-    server.get_characteristic(rx_char_uuid)
-    server.get_characteristic(tx_char_uuid)
-    server.update_value(nus_service_uuid, tx_char_uuid)
-    await asyncio.sleep(0.5)
+    # await asyncio.sleep(0.2)
+    logger.debug("Starting loop forever")
+    while True:
+        server.get_characteristic(rx_char_uuid)
+        server.get_characteristic(tx_char_uuid)
+        server.update_value(nus_service_uuid, tx_char_uuid)
+        await asyncio.sleep(0.5)
     await server.stop()
 
 
