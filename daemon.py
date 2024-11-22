@@ -38,7 +38,7 @@ else:
 #     server.update_value(service_uuid, char_uuid)
 
 
-
+run_forever = True
 
 async def run(loop):
     ### GATT Konfiguration:
@@ -60,18 +60,21 @@ async def run(loop):
     my_service_name = "UART Test Service"
     server = BlessServer(name=my_service_name, loop=loop)
 
+    
+
     # read handler (wird der überhaupt genutzt? - wird über notify/update_value)
-    async def read_request(characteristic: BlessGATTCharacteristic, **kwargs) -> bytearray:
+    def read_request(characteristic: BlessGATTCharacteristic, **kwargs) -> bytearray:
         logger.debug(f"Reading {characteristic.value}")
         #trigger.set()
         return characteristic.value
 
     # write handler
-    async def write_request(characteristic: BlessGATTCharacteristic, value: Any, **kwargs):
+    def write_request(characteristic: BlessGATTCharacteristic, value: Any, **kwargs):
         characteristic.value = value
         logger.debug(f"Serial input over BLE:{characteristic.value}")
         if characteristic.value == bytearray(b'quit'):
-            await server.stop()
+            global run_forever
+            run_forever = False
         else:
             # echo input:
             server.get_characteristic(tx_char_uuid).value = bytearray(b'okay: ' + characteristic.value)
@@ -99,10 +102,12 @@ async def run(loop):
     await server.start()
     logger.debug("GATT Server started ..")
     logger.debug("Starting loop forever")
-    while server.is_advertising:
+
+    while run_forever:
         pass
         await asyncio.sleep(2)
-    
+        
+    await server.stop()
 
 
 loop = asyncio.get_event_loop()
