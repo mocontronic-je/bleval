@@ -96,6 +96,7 @@ async def run(loop):
 
     # await asyncio.sleep(0.2)
     logger.debug("Starting loop forever")
+    global tx_buffer
     while True:
         rx_input = server.get_characteristic(rx_char_uuid).value
         if rx_input != bytearray(b''):
