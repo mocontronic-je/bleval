@@ -41,59 +41,53 @@ else:
 
 
 async def run(loop):
-    tx_buffer = bytearray(b'oKaY')
-
-
-    trigger.clear()
-    # Instantiate the server
-    my_service_name = "UART Test Service"
-    server = BlessServer(name=my_service_name, loop=loop)
-
-    def read_request(characteristic: BlessGATTCharacteristic, **kwargs) -> bytearray:
-        logger.debug(f"Reading {characteristic.value}")
-        trigger.set()
-        return characteristic.value
-
-    server.read_request_func = read_request
-
-    def write_request(characteristic: BlessGATTCharacteristic, value: Any, **kwargs):
-        global tx_buffer
-        characteristic.value = value
-        logger.debug(f"Serial input over BLE:{characteristic.value}")
-        # if characteristic.value == b"\x0f":
-        # logger.debug("NICE")
-        # trigger.set()
-        # tx_buffer = bytearray(b'okay: ' + characteristic.value)
-        server.get_characteristic(tx_char_uuid).value = bytearray(b'okay: ' + characteristic.value)
-        server.update_value(nus_service_uuid, tx_char_uuid)
-
-    
-    server.write_request_func = write_request
-
-
-
-    # Add Service
+    ### GATT Konfiguration:
     nus_service_uuid = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"
-    await server.add_new_service(nus_service_uuid)
-
-    # Add RX Characteristic to the service
+    # RX Characteristic
     rx_char_uuid = "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"
     rx_char_flags = (
         GATTCharacteristicProperties.write
         | GATTCharacteristicProperties.write_without_response
     )
     rx_char_permissions = GATTAttributePermissions.writeable
+    # TX Characteristic
+    tx_char_uuid = "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"
+    tx_char_flags = (GATTCharacteristicProperties.notify)
+    tx_char_permissions = GATTAttributePermissions.readable
+    tx_buffer = bytearray(b'oKaY')
+
+    # Instantiate the server
+    my_service_name = "UART Test Service"
+    server = BlessServer(name=my_service_name, loop=loop)
+
+    # read handler (wird der überhaupt genutzt? - wird über notify/update_value)
+    def read_request(characteristic: BlessGATTCharacteristic, **kwargs) -> bytearray:
+        logger.debug(f"Reading {characteristic.value}")
+        #trigger.set()
+        return characteristic.value
+
+    # write handler
+    def write_request(characteristic: BlessGATTCharacteristic, value: Any, **kwargs):
+        characteristic.value = value
+        logger.debug(f"Serial input over BLE:{characteristic.value}")
+        if characteristic.value == bytearray(b'quit'):
+            server.stop()
+        else:
+            # echo input:
+            server.get_characteristic(tx_char_uuid).value = bytearray(b'okay: ' + characteristic.value)
+            server.update_value(nus_service_uuid, tx_char_uuid)
+
+    # Set read/write callback functions
+    server.read_request_func = read_request
+    server.write_request_func = write_request
+
+    # Add Service  
+    await server.add_new_service(nus_service_uuid)
+    # Add RX Characteristic to the service
     await server.add_new_characteristic(
         nus_service_uuid, rx_char_uuid, rx_char_flags, None, rx_char_permissions
     )
-
-    # Add TX Characteristic to the service
-    tx_char_uuid = "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"
-    tx_char_flags = (
-        GATTCharacteristicProperties.notify
-    )
-    tx_char_permissions = GATTAttributePermissions.readable
-    
+    # Add TX Characteristic to the service 
     await server.add_new_characteristic(
         nus_service_uuid, tx_char_uuid, tx_char_flags, tx_buffer, tx_char_permissions
     )
@@ -101,24 +95,14 @@ async def run(loop):
     logger.debug(server.get_characteristic(rx_char_uuid))
     logger.debug(server.get_characteristic(tx_char_uuid))
     
+    # Start GATT Server
     await server.start()
     logger.debug("GATT Server started ..")
-    #logger.info(f"Write '0xF' to the advertised characteristic: {my_char_uuid}")
-    # if trigger.__module__ == "threading":
-    #     trigger.wait()
-    # else:
-    #     await trigger.wait()
-
-    # await asyncio.sleep(0.2)
     logger.debug("Starting loop forever")
-    while True:
-        # rx_input = server.get_characteristic(rx_char_uuid).value
-        # if rx_input != bytearray(b''):
-        #     tx_buffer = bytearray(b'okay: ' + rx_input)
-        #     server.update_value(nus_service_uuid, tx_char_uuid)
+    while server.is_advertising:
         pass
         await asyncio.sleep(2)
-    await server.stop()
+    
 
 
 loop = asyncio.get_event_loop()
