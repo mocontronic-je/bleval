@@ -31,35 +31,45 @@ else:
 
 
 
-def read_request(characteristic: BlessGATTCharacteristic, **kwargs) -> bytearray:
-    logger.debug(f"Reading {characteristic.value}")
-    trigger.set()
-    return characteristic.value
 
 
-def write_request(characteristic: BlessGATTCharacteristic, value: Any, **kwargs):
-    characteristic.value = value
-    logger.debug(f"Serial input over BLE:{characteristic.value}")
-    # if characteristic.value == b"\x0f":
-    # logger.debug("NICE")
-    # trigger.set()
-
-def notify(server, service_uuid, char_uuid, value):
-    server.get_characteristic(char_uuid).value = value
-    server.update_value(service_uuid, char_uuid)
+# def notify(server, service_uuid, char_uuid, value):
+#     server.get_characteristic(char_uuid).value = value
+#     server.update_value(service_uuid, char_uuid)
 
 
-tx_buffer = bytearray(b'oKaY')
+
 
 async def run(loop):
+    tx_buffer = bytearray(b'oKaY')
+
+
     trigger.clear()
     # Instantiate the server
     my_service_name = "UART Test Service"
     server = BlessServer(name=my_service_name, loop=loop)
+
+    def read_request(characteristic: BlessGATTCharacteristic, **kwargs) -> bytearray:
+        logger.debug(f"Reading {characteristic.value}")
+        trigger.set()
+        return characteristic.value
+
     server.read_request_func = read_request
+
+    def write_request(characteristic: BlessGATTCharacteristic, value: Any, **kwargs):
+        global tx_buffer
+        characteristic.value = value
+        logger.debug(f"Serial input over BLE:{characteristic.value}")
+        # if characteristic.value == b"\x0f":
+        # logger.debug("NICE")
+        # trigger.set()
+        tx_buffer = bytearray(b'okay: ' + characteristic.value)
+        server.update_value(nus_service_uuid, tx_char_uuid)
+
+    
     server.write_request_func = write_request
 
-    global tx_buffer
+
 
     # Add Service
     nus_service_uuid = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"
@@ -101,11 +111,12 @@ async def run(loop):
     # await asyncio.sleep(0.2)
     logger.debug("Starting loop forever")
     while True:
-        rx_input = server.get_characteristic(rx_char_uuid).value
-        if rx_input != bytearray(b''):
-            tx_buffer = bytearray(b'okay: ' + rx_input)
-            server.update_value(nus_service_uuid, tx_char_uuid)
-        await asyncio.sleep(0.5)
+        # rx_input = server.get_characteristic(rx_char_uuid).value
+        # if rx_input != bytearray(b''):
+        #     tx_buffer = bytearray(b'okay: ' + rx_input)
+        #     server.update_value(nus_service_uuid, tx_char_uuid)
+        pass
+        await asyncio.sleep(2)
     await server.stop()
 
 
