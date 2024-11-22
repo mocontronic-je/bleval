@@ -29,7 +29,7 @@ else:
     trigger = asyncio.Event()
 
 
-tx_buffer = bytearray(b'oKaY')
+
 
 def read_request(characteristic: BlessGATTCharacteristic, **kwargs) -> bytearray:
     logger.debug(f"Reading {characteristic.value}")
@@ -49,6 +49,8 @@ def notify(server, service_uuid, char_uuid, value):
     server.update_value(service_uuid, char_uuid)
 
 
+tx_buffer = bytearray(b'oKaY')
+
 async def run(loop):
     trigger.clear()
     # Instantiate the server
@@ -56,6 +58,8 @@ async def run(loop):
     server = BlessServer(name=my_service_name, loop=loop)
     server.read_request_func = read_request
     server.write_request_func = write_request
+
+    global tx_buffer
 
     # Add Service
     nus_service_uuid = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"
@@ -96,7 +100,6 @@ async def run(loop):
 
     # await asyncio.sleep(0.2)
     logger.debug("Starting loop forever")
-    global tx_buffer
     while True:
         rx_input = server.get_characteristic(rx_char_uuid).value
         if rx_input != bytearray(b''):
