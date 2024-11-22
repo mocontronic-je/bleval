@@ -11,8 +11,6 @@ sudo apt install pigpiod
 cat >/etc/systemd/system/pigpiod.service <<EOF                                                                       
 [Unit]
 Description=Daemon required to control GPIO pins via pigpio
-After=ble-setup.service
-Requires=ble-setup.service
 [Service]
 ExecStart=/usr/bin/pigpiod -x -1
 ExecStop=/bin/systemctl kill pigpiod

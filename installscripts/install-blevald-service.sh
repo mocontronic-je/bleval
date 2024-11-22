@@ -7,15 +7,17 @@ cat >/etc/systemd/system/blevald.service <<EOF
 Description=blevald service
 After=pigpiod.service
 Requires=pigpiod.service
-
+Requires=bluetooth.service
+After=bluetooth.service
 [Service]
 Type=simple
 User=pi
 Group=pi
 WorkingDirectory=/home/pi/bleval
+ExecStartPre=/usr/bin/sleep 3
 ExecStart=/home/pi/bleval/daemon.py
-ExecReload=/bin/kill -1 -- \$MAINPID
-ExecStop=/bin/kill -- \$MAINPID
+ExecReload=/bin/kill -1 -- $MAINPID
+ExecStop=/bin/kill -- $MAINPID
 TimeoutStopSec=5
 StandardOutput=journal
 StandardError=journal
