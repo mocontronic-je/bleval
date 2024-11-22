@@ -61,17 +61,17 @@ async def run(loop):
     server = BlessServer(name=my_service_name, loop=loop)
 
     # read handler (wird der überhaupt genutzt? - wird über notify/update_value)
-    def read_request(characteristic: BlessGATTCharacteristic, **kwargs) -> bytearray:
+    async def read_request(characteristic: BlessGATTCharacteristic, **kwargs) -> bytearray:
         logger.debug(f"Reading {characteristic.value}")
         #trigger.set()
         return characteristic.value
 
     # write handler
-    def write_request(characteristic: BlessGATTCharacteristic, value: Any, **kwargs):
+    async def write_request(characteristic: BlessGATTCharacteristic, value: Any, **kwargs):
         characteristic.value = value
         logger.debug(f"Serial input over BLE:{characteristic.value}")
         if characteristic.value == bytearray(b'quit'):
-            server.stop()
+            await server.stop()
         else:
             # echo input:
             server.get_characteristic(tx_char_uuid).value = bytearray(b'okay: ' + characteristic.value)
