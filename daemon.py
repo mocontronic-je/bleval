@@ -29,6 +29,8 @@ else:
     trigger = asyncio.Event()
 
 
+tx_buffer = bytearray(b'oKaY')
+
 def read_request(characteristic: BlessGATTCharacteristic, **kwargs) -> bytearray:
     logger.debug(f"Reading {characteristic.value}")
     trigger.set()
@@ -76,7 +78,7 @@ async def run(loop):
         GATTCharacteristicProperties.notify
     )
     tx_char_permissions = GATTAttributePermissions.readable
-    tx_buffer = bytearray(b'oKaY')
+    
     await server.add_new_characteristic(
         nus_service_uuid, tx_char_uuid, tx_char_flags, tx_buffer, tx_char_permissions
     )
@@ -95,7 +97,7 @@ async def run(loop):
     # await asyncio.sleep(0.2)
     logger.debug("Starting loop forever")
     while True:
-        server.get_characteristic(rx_char_uuid)
+        logger.debug(server.get_characteristic(rx_char_uuid).value)
         server.get_characteristic(tx_char_uuid)
         server.update_value(nus_service_uuid, tx_char_uuid)
         await asyncio.sleep(0.5)
