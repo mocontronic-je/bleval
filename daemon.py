@@ -63,7 +63,8 @@ async def run(loop):
         # if characteristic.value == b"\x0f":
         # logger.debug("NICE")
         # trigger.set()
-        tx_buffer = bytearray(b'okay: ' + characteristic.value)
+        # tx_buffer = bytearray(b'okay: ' + characteristic.value)
+        server.get_characteristic(tx_char_uuid).value = bytearray(b'okay: ' + characteristic.value)
         server.update_value(nus_service_uuid, tx_char_uuid)
 
     
